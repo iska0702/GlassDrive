@@ -1608,7 +1608,7 @@
         <strong style="display: block; margin-bottom: 12px; color: var(--text-primary); font-size: 14px;">Настройки
           сервера (для Android)</strong>
         <div style="display: flex; gap: 8px;">
-          <input type="text" id="serverUrlInput" placeholder="https://glassdrive.onrender.com/" style="
+          <input type="text" id="serverUrlInput" placeholder="http://192.168.x.x:3000" style="
                   flex: 1;
                   padding: 10px;
                   border-radius: 12px;
@@ -1948,7 +1948,6 @@
 
     // Dynamic Server Root configuration for APK/Mobile compatibility
     let defaultServerRoot = localStorage.getItem('customServerUrl') || "https://glassdrive.onrender.com/";
-
     // Global function to update server URL (can be called from console or UI)
     window.setServerUrl = function (url) {
       if (!url) return;
@@ -3533,8 +3532,4 @@
 
 </body>
 
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> 5cc9ef98cfd69f9f2acf6d185d48f9e8366bf121
