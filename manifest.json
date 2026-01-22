@@ -1,0 +1,16 @@
+{
+    "name": "GlassDrive",
+    "short_name": "GlassDrive",
+    "start_url": "./main.html",
+    "display": "standalone",
+    "background_color": "#0b1026",
+    "theme_color": "#3d009c",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

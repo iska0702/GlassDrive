@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GlassDrive</string>
+    <string name="title_activity_main">GlassDrive</string>
+    <string name="package_name">com.glassdrive.app</string>
+    <string name="custom_url_scheme">com.glassdrive.app</string>
+</resources>

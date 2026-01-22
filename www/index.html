@@ -1,0 +1,3536 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlassDrive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#3d009c">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(160deg, rgba(61, 0, 156, 0.35), rgba(0, 255, 224, 0.25));
+      --surface: rgba(255, 255, 255, 0.12);
+      --surface-strong: rgba(255, 255, 255, 0.2);
+      --border: rgba(255, 255, 255, 0.35);
+      --text-primary: rgba(255, 255, 255, 0.95);
+      --text-secondary: rgba(255, 255, 255, 0.65);
+      --accent: #45ffe6;
+      --danger: #ff6978;
+      --success: #59ffa0;
+      --warning: #ffd166;
+      --shadow: 0 25px 55px rgba(10, 14, 43, 0.35);
+      --blur: blur(24px);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-gradient), radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 55%);
+      color: var(--text-primary);
+      font-family: "DM Sans", "Segoe UI", sans-serif;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: absolute;
+      width: 480px;
+      height: 480px;
+      background: radial-gradient(circle, rgba(69, 255, 230, 0.45), transparent 70%);
+      filter: blur(15px);
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    body::before {
+      top: -160px;
+      left: -160px;
+    }
+
+    body::after {
+      bottom: -200px;
+      right: -120px;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 260px 1fr 320px;
+      gap: 24px;
+      padding: 32px 32px;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .glass-panel {
+      background: var(--surface);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    header.topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 48px 0;
+      position: relative;
+      z-index: 1;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Sora", sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #45ffe6, #8a8cff);
+      display: grid;
+      place-items: center;
+      color: rgba(7, 13, 43, 0.9);
+      font-weight: 700;
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 620px;
+      position: relative;
+    }
+
+    .auth-btn {
+      border: 1px solid rgba(69, 255, 230, 0.6);
+      background: rgba(69, 255, 230, 0.2);
+      color: var(--text-primary);
+      border-radius: 18px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .auth-btn:hover {
+      background: rgba(69, 255, 230, 0.35);
+      box-shadow: 0 12px 28px rgba(69, 255, 230, 0.25);
+    }
+
+    .file-card.selected {
+      border-color: #45ffe6;
+      background: rgba(69, 255, 230, 0.25);
+      box-shadow: 0 0 0 2px rgba(69, 255, 230, 0.3);
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 16px 52px 16px 32px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 18px;
+      background: rgba(14, 23, 49, 0.35);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: var(--text-primary);
+      font-size: 15px;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-box input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: rgba(69, 255, 230, 0.7);
+      box-shadow: 0 0 0 2px rgba(69, 255, 230, 0.2);
+    }
+
+    .search-icon,
+    .mic-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .search-icon {
+      left: 20px;
+    }
+
+    .mic-icon {
+      right: 20px;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      /* Force left alignment of contents */
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: background 0.2s ease, border 0.2s ease;
+      width: fit-content;
+      /* Don't stretch */
+      max-width: 100%;
+      /* Prevent overflow */
+    }
+
+    .user-chip:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(69, 255, 230, 0.5);
+    }
+
+    .user-chip span {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255, 105, 120, 0.9), rgba(255, 255, 255, 0.75));
+      display: grid;
+      place-items: center;
+      color: rgba(26, 36, 76, 0.95);
+      font-weight: 700;
+      flex-shrink: 0;
+      /* Don't squash avatar */
+    }
+
+    .user-chip-main {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      align-items: flex-start;
+      /* Force flex items (text) to left */
+    }
+
+    .user-chip-main strong {
+      font-size: 14px;
+    }
+
+    .user-chip-main span {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .user-chip-actions {
+      display: flex;
+      gap: 6px;
+      margin-left: 8px;
+    }
+
+    .user-chip-actions button {
+      border: none;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.12);
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    button:active,
+    .file-card:active,
+    .nav-item:active {
+      transform: scale(0.96);
+    }
+
+    .user-chip-actions button.primary {
+      background: rgba(69, 255, 230, 0.3);
+      color: var(--text-primary);
+    }
+
+    aside.sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 28px;
+    }
+
+    .sidebar h2 {
+      font-family: "Sora", sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 16px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s ease, border 0.15s ease, color 0.15s ease;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .nav-item.active,
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.24);
+      color: var(--text-primary);
+    }
+
+    .upload-card {
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(11, 19, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      display: grid;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .upload-card button {
+      padding: 12px 18px;
+      border-radius: 14px;
+      background: linear-gradient(120deg, rgba(69, 255, 230, 0.85), rgba(114, 163, 255, 0.85));
+      border: none;
+      color: rgba(14, 24, 46, 0.92);
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .upload-card button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 35px rgba(69, 255, 230, 0.35);
+    }
+
+    main.drive {
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      padding: 26px 26px 60px 26px;
+      /* Extra bottom padding */
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .section-header h1 {
+      margin: 0;
+      font-family: "Sora", sans-serif;
+      font-size: 28px;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .section-header.compact {
+      margin-top: 12px;
+      margin-bottom: 18px;
+      justify-content: center;
+    }
+
+    .chip {
+      border-radius: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
+      background: rgba(12, 17, 38, 0.35);
+    }
+
+    .chip.active,
+    .chip:hover {
+      color: rgba(12, 19, 35, 0.95);
+      background: rgba(69, 255, 230, 0.85);
+      border-color: transparent;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 18px;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      justify-self: center;
+      max-width: 450px;
+      border-radius: 24px;
+      padding: 32px;
+      background: rgba(10, 15, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .file-card {
+      padding: 18px;
+      border-radius: 24px;
+      background: rgba(10, 15, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: grid;
+      gap: 18px;
+      transition: transform 0.2s ease, border 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .file-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(69, 255, 230, 0.45);
+      background: rgba(69, 255, 230, 0.18);
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .file-action-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.2s;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .file-action-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      color: rgba(10, 15, 34, 0.85);
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .drive-section {
+      display: grid;
+      gap: 32px;
+    }
+
+    .drive-section.hidden {
+      display: none !important;
+    }
+
+    .server-connect {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(11, 19, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .server-connect label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .server-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .server-bar input {
+      flex: 1 1 220px;
+      min-width: 180px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(7, 12, 30, 0.55);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .server-bar input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .server-bar button {
+      padding: 12px 22px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(120deg, rgba(69, 255, 230, 0.85), rgba(114, 163, 255, 0.85));
+      color: rgba(14, 24, 46, 0.92);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .server-bar button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px rgba(69, 255, 230, 0.35);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      width: fit-content;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .status-pill.success {
+      border-color: rgba(89, 255, 160, 0.6);
+      background: rgba(89, 255, 160, 0.18);
+      color: rgba(20, 46, 37, 0.85);
+    }
+
+    .status-pill.error {
+      border-color: rgba(255, 105, 120, 0.65);
+      background: rgba(255, 105, 120, 0.2);
+      color: rgba(64, 23, 33, 0.95);
+    }
+
+    .status-pill.loading {
+      border-color: rgba(114, 163, 255, 0.5);
+      background: rgba(114, 163, 255, 0.18);
+      color: rgba(21, 31, 61, 0.85);
+    }
+
+    .file-meta {
+      display: grid;
+      gap: 6px;
+    }
+
+    .file-meta h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .file-meta span {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .progress {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .progress>div {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    /* DRIVE TOOLBAR (Refactored Header) */
+    .drive-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    /* Desktop Layout: Status Top Center (handled by grid placement or flex in row 1 if needed, 
+       but here we want: 
+       Row 1: Status (Centered) 
+       Row 2: Filters (Left) --- Sort (Right)
+    */
+    .drive-toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .drive-toolbar-top {
+      display: flex;
+      justify-content: center;
+    }
+
+    .drive-toolbar-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sort-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .sort-controls label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .sort-controls select {
+      background: rgba(12, 17, 38, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .curation-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+
+    .curation-card {
+      padding: 20px;
+      border-radius: 22px;
+      background: rgba(10, 15, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: grid;
+      gap: 10px;
+    }
+
+    .curation-card h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .section-placeholder {
+      padding: 36px;
+      border-radius: 26px;
+      background: rgba(10, 15, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: grid;
+      gap: 18px;
+    }
+
+    .section-placeholder h2 {
+      margin: 0;
+      font-size: 24px;
+      font-family: "Sora", sans-serif;
+    }
+
+    .section-placeholder ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .ai-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 28px;
+    }
+
+    .ai-panel h2 {
+      font-family: "Sora", sans-serif;
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .ai-panel p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .ai-actions {
+      display: grid;
+      gap: 14px;
+    }
+
+    .ai-action {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(14, 20, 41, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      display: grid;
+      gap: 12px;
+    }
+
+    .ai-action strong {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .ai-action span {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .ai-action .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ai-action .tag {
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(69, 255, 230, 0.25);
+      color: rgba(12, 19, 35, 0.9);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .assistant-bubble {
+      padding: 20px;
+      border-radius: 24px;
+      border: 1px solid rgba(69, 255, 230, 0.45);
+      background: rgba(7, 14, 34, 0.6);
+      display: grid;
+      gap: 12px;
+    }
+
+    .assistant-bubble header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      background: rgba(7, 12, 30, 0.65);
+    }
+
+    .modal-content {
+      position: relative;
+      width: min(520px, 90vw);
+      padding: 32px;
+      display: grid;
+      gap: 18px;
+      z-index: 1;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 36px;
+      right: 40px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      width: 36px;
+      height: 36px;
+      color: var(--text-primary);
+      font-size: 18px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .modal-tabs {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    .modal-tab {
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .modal-tab.active {
+      background: rgba(69, 255, 230, 0.25);
+      color: rgba(12, 19, 35, 0.9);
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .auth-form.hidden {
+      display: none;
+    }
+
+    .auth-form label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: grid;
+      gap: 8px;
+    }
+
+    .auth-form input,
+    .auth-form select {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(7, 14, 34, 0.55);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .auth-form input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .auth-form button[type="submit"] {
+      margin-top: 10px;
+      padding: 14px 20px;
+      border-radius: 16px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(120deg, rgba(69, 255, 230, 0.9), rgba(108, 122, 255, 0.9));
+      color: rgba(12, 19, 35, 0.95);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .auth-form button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 40px rgba(69, 255, 230, 0.35);
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    .modal small {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .assistant-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .assistant-actions button {
+      border: 1px solid rgba(69, 255, 230, 0.6);
+      background: transparent;
+      color: var(--text-primary);
+      border-radius: 16px;
+      padding: 10px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .assistant-actions button:hover {
+      background: rgba(69, 255, 230, 0.7);
+      color: rgba(12, 19, 35, 0.92);
+    }
+
+    .form-feedback {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-secondary);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .form-feedback.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .form-feedback.success {
+      border-color: rgba(89, 255, 160, 0.6);
+      background: rgba(89, 255, 160, 0.18);
+      color: rgba(20, 46, 37, 0.85);
+    }
+
+    .form-feedback.error {
+      border-color: rgba(255, 105, 120, 0.65);
+      background: rgba(255, 105, 120, 0.2);
+      color: rgba(64, 23, 33, 0.95);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 14px;
+    }
+
+    .timeline-step {
+      display: grid;
+      gap: 6px;
+      padding-left: 14px;
+      border-left: 2px solid rgba(255, 255, 255, 0.22);
+    }
+
+    а .timeline-step strong {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .timeline-step span {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* SETTINGS FIELDS STYLING */
+    #accountSettingsModal input[type="text"],
+    #accountSettingsModal input[type="email"],
+    #accountSettingsModal input[type="password"] {
+      width: 100%;
+      display: block;
+      padding: 12px 16px;
+      margin-top: 6px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(14, 20, 41, 0.6);
+      color: var(--text-primary);
+      font-size: 14px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    #accountSettingsModal input:focus {
+      border-color: rgba(69, 255, 230, 0.5);
+      background: rgba(14, 20, 41, 0.8);
+      outline: none;
+    }
+
+    #accountSettingsSave {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, rgba(69, 255, 230, 0.8), rgba(82, 102, 255, 0.8));
+      color: #0b1121;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #accountSettingsSave:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(69, 255, 230, 0.25);
+    }
+
+    #accountSettingsLogout {
+      background: rgba(255, 105, 120, 0.15);
+      border: 1px solid rgba(255, 105, 120, 0.3);
+      color: #ff6978;
+      padding: 10px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    /* Force compact user chip on mobile */
+    @media (max-width: 980px) {
+      .user-chip {
+        width: fit-content !important;
+        flex: 0 0 auto !important;
+        justify-content: flex-start !important;
+        max-width: 100%;
+        margin-inline: auto !important;
+        /* Center the chip */
+        margin-top: 12px !important;
+        /* Spacing */
+      }
+
+      .user-chip-main {
+        flex: 0 0 auto !important;
+        width: auto !important;
+      }
+
+      .user-chip-actions {
+        margin-left: 8px !important;
+        /* Prevent auto margin */
+      }
+    }
+
+    #accountSettingsLogout:hover {
+      background: rgba(255, 105, 120, 0.25);
+      color: var(--text-secondary);
+    }
+
+    footer {
+      padding: 0 48px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 13px;
+    }
+
+    footer .cta {
+      display: flex;
+      gap: 12px;
+    }
+
+    footer .cta a {
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer .cta a:hover {
+      color: var(--accent);
+    }
+
+    @media (max-width: 1280px) {
+      .app-shell {
+        grid-template-columns: 240px 1fr;
+      }
+
+      .ai-panel {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .assistant-bubble,
+      .ai-actions {
+        flex: 1;
+        min-width: 260px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      header.topbar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      header.topbar .logo {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        top: 16px;
+      }
+
+      header.topbar .search-box {
+        order: 3;
+        width: 100%;
+        margin-top: 16px;
+      }
+
+      /* Reduce margin/padding for mobile header */
+      header.topbar {
+        padding-top: 24px;
+        margin-bottom: 12px;
+      }
+
+      main.drive {
+        padding: 16px 16px 60px 16px;
+        /* Even more bottom padding for mobile */
+        gap: 16px;
+      }
+
+      /* Refactored Drive Toolbar for Mobile */
+      .drive-toolbar {
+        display: grid !important;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+          "status sort"
+          "filter filter";
+        gap: 16px 8px;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .drive-toolbar-bottom {
+        display: contents !important;
+        /* Flatten the wrapper so children participate in grid */
+      }
+
+      .status-pill {
+        grid-area: status;
+        justify-self: start;
+        margin: 0 !important;
+      }
+
+      .sort-controls {
+        grid-area: sort;
+        justify-self: end;
+        margin: 0 !important;
+      }
+
+      .sort-controls label {
+        display: none;
+        /* Hide label on mobile to save space */
+      }
+
+      .filter-chips {
+        grid-area: filter;
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        flex-wrap: nowrap !important;
+        /* Horiz scroll on mobile */
+        justify-content: flex-start;
+      }
+
+      /* Toggle Button for Sidebar */
+      #mobileMenuBtn {
+        display: block !important;
+      }
+
+      .app-shell {
+        grid-template-columns: 1fr;
+        padding: 24px;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .search-box {
+        width: 100%;
+      }
+
+      /* header.topbar centering handled in 980px media query */
+
+      .file-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      }
+
+      body {
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .modal-content {
+        padding: 24px;
+      }
+
+      .modal-tabs {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .server-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .server-bar button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="sidebarOverlay"></div>
+  <header class="topbar">
+    <button id="mobileMenuBtn" style="
+        display: none;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 24px;
+        margin-right: 12px;
+        cursor: pointer;
+      ">☰</button>
+    <div class="logo">
+      <div class="logo-mark">GD</div>
+      <div>
+        <span>Glass</span>
+        <span style="color: rgba(69, 255, 230, 0.85);">Drive</span>
+      </div>
+    </div>
+    <div class="search-box">
+      <input type="search" id="searchInput" placeholder="Найдите файлы, папки или архивы" />
+    </div>
+    <button class="auth-btn" id="authTrigger">Войти / Регистрация</button>
+    <div class="user-chip" id="userChip" style="display: none;">
+      <div class="avatar" id="userAvatar">U</div>
+      <div class="user-chip-main">
+        <strong id="userNameLabel">Пользователь</strong>
+        <span id="userEmailLabel">email@example.com</span>
+      </div>
+      <div class="user-chip-actions">
+        <button class="primary" type="button" id="openAccountSettingsBtn"
+          onclick="openAccountSettingsModal()">Настройки</button>
+        <button type="button" id="logoutBtn" onclick="handleLogout()">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar glass-panel">
+      <div>
+        <h2>Навигация</h2>
+        <div class="nav-list">
+          <button class="nav-item active" id="navDrive" onclick="navigateToRoot()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
+            </svg>
+            Мой диск
+          </button>
+          <button class="nav-item" id="navFavorites" onclick="loadFavoritesView()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Избранное
+          </button>
+          <button class="nav-item" id="navUsers" onclick="loadUsersView()" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Пользователи
+          </button>
+        </div>
+      </div>
+      <div>
+        <h2>Действия</h2>
+        <button onclick="handleCreateFolder()" style="
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: background 0.2s;
+        " onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+          <span class="material-icons"></span> Создать папку
+        </button>
+        <button onclick="handleDownloadAll()" style="
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: background 0.2s;
+        " onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+          <span class="material-icons"></span> Скачать всё
+        </button>
+        <div class="upload-card">
+          <p style="margin: 0; color: var(--text-secondary);">
+            Перетащите файлы сюда или используйете кнопку ниже, чтобы загрузить документы, фото и видео.
+          </p>
+          <button id="uploadBtn" onclick="triggerUpload()">Загрузить файлы</button>
+          <input type="file" id="fileInput" style="display: none;">
+        </div>
+      </div>
+    </aside>
+
+    <main class="drive glass-panel">
+      <!-- Refactored Header -->
+
+
+      <!-- RETRY with precise structure -->
+      <div class="drive-toolbar">
+        <!-- Status Pill -->
+        <div id="statusContainer" class="status-pill" style="margin: 0 auto;">Облако пользователя</div>
+
+        <!-- Toolbar Bottom Row (Desktop) / Split (Mobile) -->
+        <div class="drive-toolbar-bottom"
+          style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+          <div id="filterContainer" class="filter-chips">
+            <div class="chip active" data-filter="all">Все</div>
+            <div class="chip" data-filter="folder">Папки</div>
+            <div class="chip" data-filter="docs">Документы</div>
+            <div class="chip" data-filter="photo">Фото</div>
+            <div class="chip" data-filter="video">Видео</div>
+          </div>
+
+          <div id="sortContainer" class="sort-controls">
+            <label for="sortSelect">Сортировка:</label>
+            <select id="sortSelect" onchange="handleSortChange(this.value)">
+              <option value="name_asc">Имя (А-Я)</option>
+              <option value="name_desc">Имя (Я-А)</option>
+              <option value="date_desc">Сначала новые</option>
+              <option value="date_asc">Сначала старые</option>
+              <option value="size_desc">Сначала большие</option>
+              <option value="size_asc">Сначала маленькие</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- FILES VIEW (Google Drive Style) -->
+      <section class="drive-section" data-view-section="files">
+        <div class="file-grid" id="filesGrid">
+          <div class="empty-state">
+            <h3>Нет файлов</h3>
+            <p>Загрузите файлы, чтобы увидеть их здесь.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ADMIN USERS VIEW -->
+      <section class="drive-section hidden" data-view-section="users">
+        <div class="file-grid" id="usersGrid">
+          <!-- Users Loaded Here -->
+        </div>
+      </section>
+    </main>
+
+    <aside class="ai-panel glass-panel">
+      <div class="assistant-bubble">
+        <header>
+          <div>
+            <strong>GlassDrive AI</strong>
+          </div>
+        </header>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message bot">Привет! Я ваш ИИ-помощник. Чем могу помочь с файлами?</div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" id="chatInput" placeholder="Спросите что-нибудь..." />
+          <button id="sendMessageBtn">⬆</button>
+        </div>
+      </div>
+
+      <div class="assistant-bubble" id="filePropertiesPanel"
+        style="display: none; border-color: rgba(255,255,255,0.2);">
+        <header>
+          <div>
+            <strong>Свойства файла</strong>
+          </div>
+        </header>
+        <div style="display: grid; gap: 12px; font-size: 13px;">
+          <div style="display: grid; gap: 4px;">
+            <span style="color: var(--text-secondary);">Имя:</span>
+            <span id="propName" style="word-break: break-all; font-weight: 500;"></span>
+          </div>
+          <div style="display: grid; gap: 4px;">
+            <span style="color: var(--text-secondary);">Тип:</span>
+            <span id="propType"></span>
+          </div>
+          <div style="display: grid; gap: 4px;">
+            <span style="color: var(--text-secondary);">Размер:</span>
+            <span id="propSize"></span>
+          </div>
+          <div style="display: grid; gap: 4px;">
+            <span style="color: var(--text-secondary);">Дата:</span>
+            <span id="propDate"></span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px;">
+            <button id="propOpenBtn" style="
+              padding: 10px;
+              border-radius: 12px;
+              background: rgba(255, 255, 255, 0.1);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              color: var(--text-primary);
+              cursor: pointer;
+              font-weight: 500;
+              font-size: 13px;
+              transition: background 0.2s;
+            ">Открыть</button>
+
+            <button id="propDownloadBtn" style="
+              padding: 10px;
+              border-radius: 12px;
+              background: rgba(69, 255, 230, 0.15);
+              border: 1px solid rgba(69, 255, 230, 0.3);
+              color: var(--accent);
+              cursor: pointer;
+              font-weight: 600;
+              font-size: 13px;
+              transition: background 0.2s;
+            ">Скачать</button>
+
+            <button id="propShareBtn" style="
+              padding: 10px;
+              border-radius: 12px;
+              background: rgba(255, 255, 255, 0.1);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              color: var(--text-primary);
+              cursor: pointer;
+              font-weight: 500;
+              font-size: 13px;
+              transition: background 0.2s;
+            ">Поделиться</button>
+
+            <button id="propLinkBtn" style="
+              padding: 10px;
+              border-radius: 12px;
+              background: rgba(255, 255, 255, 0.1);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              color: var(--text-primary);
+              cursor: pointer;
+              font-weight: 500;
+              font-size: 13px;
+              transition: background 0.2s;
+            ">Ссылка</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="modal" id="authModal">
+    <div class="modal-overlay" data-close="modal"></div>
+    <div class="modal-content glass-panel">
+      <button class="modal-close" id="modalClose" aria-label="Закрыть модальное окно">✕</button>
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="login">Войти</button>
+        <button class="modal-tab" data-tab="register">Регистрация</button>
+      </div>
+      <form class="auth-form" id="loginForm" data-tab="login">
+        <label>
+          Электронная почта
+          <input type="email" name="login-email" placeholder="you@company.com" required />
+        </label>
+        <label style="position: relative;">
+          Пароль
+          <input type="password" name="login-password" id="loginPassword" placeholder="••••••••" required
+            style="padding-right: 40px;" />
+          <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword')"
+            style="position: absolute; right: 10px; top: 32px; background: none; border: none; color: var(--text-secondary); cursor: pointer;">👁️</button>
+        </label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="rememberMe" name="remember" />
+          <label for="rememberMe" style="margin: 0;">Запомнить устройство</label>
+        </div>
+        <button type="submit">Войти</button>
+      </form>
+      <form class="auth-form hidden" id="registerForm" data-tab="register">
+        <label>
+          Полное имя
+          <input type="text" name="register-name" placeholder="Анна Петрова" required />
+        </label>
+        <label>
+          Электронная почта
+          <input type="email" name="register-email" placeholder="you@company.com" required />
+        </label>
+        <label style="position: relative;">
+          Пароль
+          <input type="password" name="register-password" id="regPassword" placeholder="Минимум 8 символов" required
+            style="padding-right: 40px;" />
+          <button type="button" class="password-toggle" onclick="togglePasswordVisibility('regPassword')"
+            style="position: absolute; right: 10px; top: 32px; background: none; border: none; color: var(--text-secondary); cursor: pointer;">👁️</button>
+        </label>
+        <label style="position: relative;">
+          Подтверждение пароля
+          <input type="password" name="register-confirm" id="regConfirmPassword" placeholder="Повторите пароль"
+            required />
+        </label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="terms" name="terms" required />
+          <label for="terms" style="margin: 0;">Согласен с условиями обслуживания и политикой конфиденциальности</label>
+        </div>
+        <button type="submit">Создать аккаунт</button>
+      </form>
+      <small>После регистрации проверьте электронную почту, чтобы подтвердить аккаунт и настроить синхронизацию с
+        сервером.</small>
+    </div>
+  </div>
+
+  <div class="modal" id="accountSettingsModal">
+    <div class="modal-overlay" data-close="modal"></div>
+    <div class="modal-content glass-panel">
+      <button class="modal-close" id="accountSettingsClose" aria-label="Закрыть модальное окно">✕</button>
+      <h2 style="margin-top: 0;">Настройки аккаунта</h2>
+      <p style="margin: 0 0 12px; color: var(--text-secondary);">Логин: <snap id="accountSettingsUserInfo"></snap>
+      </p>
+      <div style="display: grid; gap: 10px; margin-bottom: 14px;">
+        <label>
+          Имя
+          <input type="text" id="accountSettingsName" placeholder="Как вас называть" />
+        </label>
+        <label>
+          Электронная почта
+          <input type="email" id="accountSettingsEmail" placeholder="you@company.com" />
+        </label>
+        <label>
+          Новый пароль
+          <input type="password" id="accountSettingsPassword" placeholder="Оставьте пустым, чтобы не менять" />
+        </label>
+        <label>
+          Подтверждение нового пароля
+          <input type="password" id="accountSettingsPasswordConfirm" placeholder="Повторите новый пароль" />
+        </label>
+        <small style="color: var(--text-secondary);">Аватар обновится автоматически по имени (инициалы или
+          эмодзи).</small>
+        <button type="button" id="accountSettingsSave">Сохранить изменения</button>
+      </div>
+
+      <div style="margin-top: 1px; display: flex; gap: 10px;">
+        <button type="button" id="accountSettingsLogout" style="flex: 0 0 auto;">
+          Выйти из аккаунта
+        </button>
+      </div>
+
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <strong style="display: block; margin-bottom: 12px; color: var(--text-primary); font-size: 14px;">Настройки
+          сервера (для Android)</strong>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="serverUrlInput" placeholder="http://192.168.x.x:3000" style="
+                  flex: 1;
+                  padding: 10px;
+                  border-radius: 12px;
+                  border: 1px solid rgba(255,255,255,0.15);
+                  background: rgba(0,0,0,0.2);
+                  color: white;
+                  font-size: 13px;
+              ">
+          <button onclick="window.setServerUrl(document.getElementById('serverUrlInput').value)" style="
+                  padding: 10px 16px;
+                  border-radius: 12px;
+                  background: var(--accent);
+                  border: none;
+                  color: #070D2B;
+                  font-weight: 600;
+                  cursor: pointer;
+                  white-space: nowrap;
+              ">Сохранить</button>
+        </div>
+        <p style="margin: 8px 0 0; font-size: 11px; color: var(--text-secondary);">
+          Текущий: <span id="currentServerDisplay"></span>. Измените это, если приложение не подключается.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="linkModal">
+    <div class="modal-overlay" data-close="modal"></div>
+    <div class="modal-content glass-panel" style="width: min(480px, 90vw);">
+      <button class="modal-close" id="linkModalClose" aria-label="Закрыть">✕</button>
+      <h2 style="margin-top: 0; font-size: 18px; font-family: 'Sora', sans-serif;">Ссылка на файл</h2>
+      <p style="margin: 0 0 14px; color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
+        Используйте эту временную ссылку для скачивания. Она содержит ваш ключ доступа, поэтому не делитесь ею с
+        ненадежными людьми.
+      </p>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="linkModalInput" readonly style="
+          flex: 1; 
+          padding: 12px; 
+          border-radius: 12px; 
+          border: 1px solid rgba(255,255,255,0.15); 
+          background: rgba(0,0,0,0.25); 
+          color: var(--accent); 
+          font-family: 'JetBrains Mono', monospace; 
+          font-size: 12px;
+          outline: none;
+        ">
+        <button id="linkModalCopyBtn" title="Копировать" style="
+          padding: 12px; 
+          border-radius: 12px; 
+          background: rgba(69, 255, 230, 0.2); 
+          border: 1px solid rgba(69, 255, 230, 0.4); 
+          color: var(--accent); 
+          cursor: pointer;
+          font-weight: 600;
+          min-width: 44px;
+          transition: all 0.2s;
+        ">📋</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const gradientMap = {
+      design: "linear-gradient(135deg, rgba(69,255,230,0.85), rgba(82,102,255,0.85))",
+      docs: "linear-gradient(135deg, rgba(255, 215, 92, 0.85), rgba(255, 162, 92, 0.85))",
+      photo: "linear-gradient(135deg, rgba(255, 105, 120, 0.88), rgba(255, 151, 209, 0.85))",
+      video: "linear-gradient(135deg, rgba(111, 114, 255, 0.88), rgba(187, 124, 255, 0.85))",
+      folder: "linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(69, 255, 230, 0.6))",
+      faces: "linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(187, 124, 255, 0.7))",
+      default: "linear-gradient(135deg, rgba(114, 163, 255, 0.75), rgba(69, 255, 230, 0.75))",
+    };
+
+    const iconMap = {
+      design: "🎨",
+      docs: "📄",
+      photo: "📸",
+      video: "🎬",
+      folder: "📁",
+      faces: "🧑‍🤝‍🧑",
+      default: "🗂️",
+    };
+
+    function formatSize(bytes) {
+
+      if (bytes === 0 || bytes === undefined || bytes === null) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    const filterChips = document.querySelectorAll(".chip[data-filter]");
+    let currentFilter = "all";
+
+    function applyFilter() {
+      const cards = document.querySelectorAll(".file-card[data-category]");
+      cards.forEach((card) => {
+        const categories = card.dataset.category.split(" ");
+        const isVisible = currentFilter === "all" || categories.includes(currentFilter);
+        card.style.display = isVisible ? "grid" : "none";
+      });
+    }
+
+    filterChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        currentFilter = chip.dataset.filter;
+        filterChips.forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        applyFilter();
+      });
+    });
+
+    applyFilter();
+
+    function handleSortChange(value) {
+      currentSort = value;
+      renderServerFiles(serverCache);
+    }
+
+    const aiButtons = document.querySelectorAll(".assistant-actions button");
+    const aiCards = document.querySelectorAll(".ai-action");
+
+    aiButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const action = btn.dataset.action;
+
+        aiCards.forEach((card) => {
+          const isTarget = card.dataset.actionCard === action;
+          card.style.borderColor = isTarget ? "rgba(69, 255, 230, 0.6)" : "rgba(255, 255, 255, 0.16)";
+          card.style.background = isTarget ? "rgba(69, 255, 230, 0.22)" : "rgba(14, 20, 41, 0.5)";
+        });
+      });
+    });
+
+    const viewTabs = document.querySelectorAll("#viewTabs .chip");
+    const driveSections = document.querySelectorAll("[data-view-section]");
+    const viewStatus = document.getElementById("statusContainer");
+
+    function updateStatusPill(element, status, message) {
+      if (!element) return;
+      element.classList.remove("success", "error", "loading");
+      if (status) {
+        element.classList.add(status);
+      }
+      if (message) {
+        element.textContent = message;
+      }
+    }
+
+
+    // Search Logic
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        if (!term) {
+          renderServerFiles(serverCache);
+          return;
+        }
+
+        const filtered = serverCache.files.filter(f => f.name.toLowerCase().includes(term));
+        renderServerFiles({ files: filtered }, true); // Pass true to indicate search mode (optional logic, or just render)
+      });
+    }
+
+    function setActiveView(targetView) {
+      viewTabs.forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.view === targetView);
+      });
+      driveSections.forEach((section) => {
+        section.classList.toggle("hidden", section.dataset.viewSection !== targetView);
+      });
+
+      const filters = document.getElementById('filterContainer');
+      const sorter = document.getElementById('sortContainer');
+      const statusPill = document.getElementById('statusContainer'); // renamed id
+
+      // Helper to toggle tools
+      const setToolsVisible = (visible) => {
+        if (filters) filters.style.display = visible ? 'flex' : 'none';
+        if (sorter) sorter.style.display = visible ? 'flex' : 'none';
+      };
+
+      switch (targetView) {
+        case "files":
+          updateStatusPill(statusPill, "success", "Мои файлы");
+          setToolsVisible(true);
+          break;
+        case "server":
+          updateStatusPill(
+            statusPill,
+            serverConnected ? "success" : "loading",
+            serverConnected ? "Подключено" : "Проверка связи..."
+          );
+          setToolsVisible(true);
+          break;
+        case "users": // Admin view
+          setToolsVisible(false);
+          break;
+        default:
+          updateStatusPill(statusPill, null, "Облако пользователя");
+          setToolsVisible(true);
+      }
+    }
+
+    viewTabs.forEach((tab) => {
+      tab.addEventListener("click", () => setActiveView(tab.dataset.view));
+    });
+
+    // Default to Files view
+    setActiveView("files");
+
+    const serverPlaceholder = document.getElementById("serverPlaceholder");
+    // We now use #filesGrid for the main file list
+    const filesGrid = document.getElementById("filesGrid");
+    const userFolderHint = document.getElementById("userFolderHint");
+    const serverPathDisplay = document.getElementById("serverPathDisplay");
+
+    // UPLOAD LOGIC
+    const uploadBtn = document.getElementById("uploadBtn");
+    const fileInput = document.getElementById("fileInput");
+
+    window.triggerUpload = function () {
+      if (!currentUser) {
+        alert("Вы не зарегистрированы! Войдите в аккаунт.");
+        return;
+      }
+      const fin = document.getElementById("fileInput");
+      if (fin) fin.click();
+    };
+
+    // Remove old listener if exists (not critical as we changed HTML to use onclick)
+    /*
+    uploadBtn?.addEventListener("click", () => {
+      // Logic moved to triggerUpload
+    });
+    */
+
+    // DRAG AND DROP HANDLERS
+    const uploadCard = document.querySelector('.upload-card');
+    if (uploadCard) {
+      uploadCard.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadCard.style.borderColor = 'var(--accent-primary)';
+        uploadCard.style.background = 'rgba(124, 58, 237, 0.1)';
+      });
+
+      uploadCard.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadCard.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        uploadCard.style.background = 'transparent';
+      });
+
+      uploadCard.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        uploadCard.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        uploadCard.style.background = 'transparent';
+
+        if (!currentUser) {
+          alert("Вы не зарегистрированы! Войдите в аккаунт.");
+          return;
+        }
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const file = files[0];
+          updateStatusPill(viewStatus, "loading", `Загрузка ${file.name}...`);
+
+          try {
+            const response = await authFetch(`${defaultServerRoot}/api/upload`, {
+              method: 'POST',
+              headers: {
+                'x-filename': encodeURIComponent(file.name),
+                'x-path': encodeURIComponent(currentPath)
+              },
+              body: file
+            });
+
+            if (response.ok) {
+              updateStatusPill(viewStatus, "success", "Файл загружен");
+              await hydrateUserCloud();
+            } else {
+              const err = await response.json();
+              alert("Ошибка загрузки: " + (err.error || "Неизвестная ошибка"));
+              updateStatusPill(viewStatus, "error", "Ошибка загрузки");
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Ошибка сети");
+            updateStatusPill(viewStatus, "error", "Ошибка сети");
+          }
+        }
+      });
+    }
+
+    fileInput?.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (!currentUser) return;
+
+      updateStatusPill(viewStatus, "loading", `Загрузка ${file.name}...`);
+
+      try {
+        const response = await authFetch(`${defaultServerRoot}/api/upload`, {
+          method: 'POST',
+          headers: {
+            'x-filename': encodeURIComponent(file.name),
+            'x-path': encodeURIComponent(currentPath)
+          },
+          body: file // Send as raw binary
+        });
+
+        if (response.ok) {
+          updateStatusPill(viewStatus, "success", "Файл загружен");
+          // Refresh files
+          await hydrateUserCloud();
+        } else {
+          const err = await response.json();
+          updateStatusPill(viewStatus, "error", err.error || "Ошибка загрузки");
+          alert("Ошибка загрузки: " + (err.error || "Неизвестная ошибка"));
+        }
+      } catch (error) {
+        console.error(error);
+        updateStatusPill(viewStatus, "error", "Файл не загружен");
+        alert("Ошибка сети");
+      }
+
+      // Reset input so same file can be selected again if needed
+      fileInput.value = '';
+    });
+
+
+    /* СЕРВЕРНАЯ ЛОГИКА (SECURE) */
+
+    // Dynamic Server Root configuration for APK/Mobile compatibility
+    let defaultServerRoot = localStorage.getItem('customServerUrl') || "http://192.168.91.128:3000";
+
+    // Global function to update server URL (can be called from console or UI)
+    window.setServerUrl = function (url) {
+      if (!url) return;
+      // Ensure no trailing slash
+      url = url.replace(/\/$/, "");
+      if (!url.startsWith("http")) {
+        url = "http://" + url;
+      }
+      localStorage.setItem('customServerUrl', url);
+      defaultServerRoot = url;
+      alert("URL сервера изменен на: " + url + "\nСтраница будет перезагружена.");
+      window.location.reload();
+    };
+    let serverConnected = false;
+    let serverCache = { files: [], folders: [] };
+    let currentPath = "";
+    let currentSort = "name_asc";
+    let currentUser = null; // UI state only
+    let targetUser = null; // ADMIN: The user we are currently impersonating
+    let sessionToken = null; // Memory-only token for session login
+
+    function getAuthToken() {
+      return sessionToken || localStorage.getItem('auth_token');
+    }
+
+    /* Helper: Authenticated Fetch */
+    async function authFetch(url, options = {}) {
+      const token = getAuthToken();
+      const headers = options.headers || {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Admin Masquerading
+      // If targetUser is set, append it to query params for GET or body for POST if JSON
+      if (targetUser && currentUser && currentUser.email === 'admin@glassdrive.com') {
+        if (options.method === 'POST' || options.method === 'DELETE' || options.method === 'PUT') {
+          // For POST/JSON, add to body
+          // Note: This requires body to be parsed and re-stringified if it's JSON string.
+          // Simplified check:
+          if (typeof options.body === 'string' && headers['Content-Type'] === 'application/json') {
+            const body = JSON.parse(options.body);
+            body.targetUser = targetUser;
+            options.body = JSON.stringify(body);
+          }
+        } else {
+          // For GET, append to URL
+          const separator = url.includes('?') ? '&' : '?';
+          url = `${url}${separator}targetUser=${encodeURIComponent(targetUser)}`;
+        }
+      }
+
+      return fetch(url, {
+        ...options,
+        headers: headers,
+        credentials: 'include', // Cookies (optional now but good to keep)
+      });
+    }
+
+    async function checkAuth() {
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/check-auth`);
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          updateUserChip(currentUser);
+
+          // Check Admin handled by updateUserChip -> updateAdminInterface
+
+          // Show filters
+
+          // Show filters
+          const filters = document.getElementById('filterContainer');
+          const sorter = document.getElementById('sortContainer');
+          if (filters) filters.style.display = 'flex';
+          if (sorter) sorter.style.display = 'flex';
+
+          await hydrateUserCloud();
+          return true;
+        }
+      } catch (e) {
+        console.warn("Auth check failed", e);
+      }
+      updateUserChip(null);
+      return false;
+    }
+
+    /* Password Toggle */
+    window.togglePasswordVisibility = function (inputId) {
+      const input = document.getElementById(inputId);
+      // Find button next to input
+      const btn = input.parentElement.querySelector('.password-toggle');
+
+      if (input.type === "password") {
+        input.type = "text";
+        if (btn) btn.textContent = "🙈";
+      } else {
+        input.type = "password";
+        if (btn) btn.textContent = "👁️";
+      }
+    };
+
+    /* UI State Updates */
+    function updateAdminInterface() {
+      const navUsers = document.getElementById('navUsers');
+      if (currentUser && currentUser.email === 'admin@glassdrive.com') {
+        if (navUsers) navUsers.style.display = 'flex';
+      } else {
+        if (navUsers) navUsers.style.display = 'none';
+      }
+    }
+
+    function updateUserChip(user) {
+      const chip = document.getElementById('userChip');
+      const authBtn = document.getElementById('authTrigger');
+      const nameLabel = document.getElementById('userNameLabel');
+      const emailLabel = document.getElementById('userEmailLabel');
+      const avatar = document.getElementById('userAvatar');
+
+      if (user) {
+        if (chip) chip.style.display = 'flex';
+        if (authBtn) authBtn.style.display = 'none';
+        if (nameLabel) nameLabel.textContent = user.name || 'User';
+        if (emailLabel) emailLabel.textContent = user.email;
+        if (avatar) avatar.textContent = (user.name || 'U')[0].toUpperCase();
+      } else {
+        if (chip) chip.style.display = 'none';
+        if (authBtn) authBtn.style.display = 'block';
+      }
+      updateAdminInterface();
+    }
+
+    /* Auth Actions */
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(loginForm);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+          const rememberMe = document.getElementById('rememberMe').checked;
+          const res = await authFetch(`${defaultServerRoot}/api/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: data['login-email'],
+              password: data['login-password'],
+              rememberMe: rememberMe
+            })
+          });
+
+          if (res.ok) {
+            const result = await res.json();
+            currentUser = { name: result.name, email: result.email };
+
+            const rememberMe = document.getElementById('rememberMe').checked;
+            if (result.token) {
+              if (rememberMe) {
+                localStorage.setItem('auth_token', result.token);
+                sessionToken = null;
+              } else {
+                sessionToken = result.token;
+                localStorage.removeItem('auth_token'); // Ensure no stale persistent token
+              }
+            }
+            updateUserChip(currentUser);
+            closeModal();
+
+            // Immediately load files without reload
+            await hydrateUserCloud();
+          } else {
+            const err = await res.json();
+            alert(err.error || 'Ошибка входа');
+          }
+        } catch (e) {
+          console.error(e);
+          alert('Ошибка сети');
+        }
+      });
+    }
+
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(registerForm);
+        const data = Object.fromEntries(formData.entries());
+
+        if (data['register-password'] !== data['register-confirm']) {
+          alert("Пароли не совпадают");
+          return;
+        }
+
+        try {
+          const res = await authFetch(`${defaultServerRoot}/api/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: data['register-email'],
+              password: data['register-password'],
+              name: data['register-name'],
+              rememberMe: false // Default to session-only for registration
+            })
+          });
+
+          if (res.ok) {
+            const result = await res.json();
+            currentUser = result.user;
+            if (result.token) localStorage.setItem('auth_token', result.token);
+            updateUserChip(currentUser);
+            closeModal();
+
+            // Immediately load files without reload
+            await hydrateUserCloud();
+          } else {
+            const err = await res.json();
+            alert(err.error || 'Ошибка регистрации');
+          }
+        } catch (e) {
+          console.error(e);
+          alert('Ошибка сети');
+        }
+      });
+    }
+
+    window.handleLogout = async function () {
+      try {
+        await authFetch(`${defaultServerRoot}/api/logout`, { method: 'POST' });
+      } catch (e) {
+        console.error("Logout failed", e);
+      }
+      localStorage.removeItem('auth_token');
+      sessionToken = null;
+      currentUser = null;
+      updateUserChip(null);
+      renderServerFiles({ files: [] });
+      window.location.reload();
+    };
+
+
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+      // Logic moved to handleLogout
+    });
+
+    // Bind Settings Modal Logout Button
+    const accountSettingsLogout = document.getElementById('accountSettingsLogout');
+    if (accountSettingsLogout) {
+      accountSettingsLogout.addEventListener('click', window.handleLogout);
+    }
+
+    /* Account Settings Logic */
+    window.openAccountSettingsModal = function () {
+      if (!currentUser) return;
+      const modal = document.getElementById('accountSettingsModal');
+      if (modal) {
+        modal.classList.add('active');
+        // Populate fields
+        const nameInput = document.getElementById('accountSettingsName');
+        const emailInput = document.getElementById('accountSettingsEmail');
+        const infoP = document.getElementById('accountSettingsUserInfo');
+
+        if (nameInput) nameInput.value = currentUser.name || '';
+        if (emailInput) {
+          emailInput.value = currentUser.email || '';
+          emailInput.disabled = true; // Email change not supported yet
+        }
+        if (infoP) infoP.textContent = `${currentUser.email}`;
+
+        // Pre-fill server URL
+        const currentUrl = localStorage.getItem('customServerUrl') || "http://192.168.91.128:3000";
+        const sInput = document.getElementById("serverUrlInput");
+        const sDisplay = document.getElementById("currentServerDisplay");
+        if (sInput) sInput.value = currentUrl;
+        if (sDisplay) sDisplay.textContent = currentUrl;
+      }
+    };
+
+    // Bind Close Button
+    document.getElementById('accountSettingsClose')?.addEventListener('click', () => {
+      document.getElementById('accountSettingsModal').classList.remove('active');
+    });
+
+    // Bind Save Button
+    document.getElementById('accountSettingsSave')?.addEventListener('click', async () => {
+      const name = document.getElementById('accountSettingsName').value;
+      const password = document.getElementById('accountSettingsPassword').value;
+      const confirmPass = document.getElementById('accountSettingsPasswordConfirm').value;
+
+      if (password && password !== confirmPass) {
+        alert("Пароли не совпадают");
+        return;
+      }
+
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/user/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, password })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          updateUserChip(currentUser);
+          alert("Настройки сохранены");
+          document.getElementById('accountSettingsModal').classList.remove('active');
+          // Clear password fields
+          document.getElementById('accountSettingsPassword').value = '';
+          document.getElementById('accountSettingsPasswordConfirm').value = '';
+        } else {
+          const err = await res.json();
+          alert(err.error || "Ошибка сохранения");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Ошибка сети");
+      }
+    });
+
+    /* Files Logic */
+    async function hydrateUserCloud() {
+      if (!currentUser) return;
+
+      const sPill = document.getElementById('statusContainer');
+      updateStatusPill(sPill, "loading", "Загрузка...");
+
+      const filters = document.getElementById('filterContainer');
+      const sorter = document.getElementById('sortContainer');
+      if (filters) filters.style.display = 'flex';
+      if (sorter) sorter.style.display = 'flex';
+
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/files?path=${encodeURIComponent(currentPath)}`);
+        if (res.ok) {
+          const files = await res.json();
+          serverCache.files = files;
+          renderServerFiles(serverCache);
+          updateStatusPill(sPill, "success", "Мои файлы");
+
+          // Update Breadcrumbs
+          const pathDisplay = document.getElementById('serverPathDisplay'); // Using serverPlaceholder area or similar
+          // TODO: Ensure breadcrumbs UI exists or reuse "viewStatus"? 
+          // Existing UI had limited breadcrumbs. Let's just update title.
+        } else {
+          updateStatusPill(viewStatus, "error", "Ошибка загрузки");
+        }
+      } catch (e) {
+        console.error(e);
+        updateStatusPill(viewStatus, "error", "Ошибка сети");
+      }
+    }
+
+    function renderServerFiles(data) {
+      const grid = document.getElementById('filesGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      if (!data.files || data.files.length === 0) {
+        if (currentPath) {
+          const backCard = createFolderCard({ name: ".." }, true);
+          grid.appendChild(backCard);
+        }
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = `<h3>Нет файлов</h3><p>В этой папке пусто.</p>`;
+        grid.appendChild(empty);
+        return;
+      }
+
+      if (currentPath !== "") {
+        const backCard = createFolderCard({ name: ".." }, true);
+        grid.appendChild(backCard);
+      }
+
+      const sorted = [...data.files].sort((a, b) => {
+        if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+
+        const mul = currentSort.includes('desc') ? -1 : 1;
+        if (currentSort.includes('name')) return a.name.localeCompare(b.name) * mul;
+        if (currentSort.includes('size')) return ((a.size || 0) - (b.size || 0)) * mul;
+        if (currentSort.includes('date')) return ((new Date(a.mtime) || 0) - (new Date(b.mtime) || 0)) * mul;
+        return 0;
+      });
+
+      sorted.forEach(file => {
+        if (file.isDirectory) grid.appendChild(createFolderCard(file));
+        else grid.appendChild(createFileCard(file));
+      });
+    }
+
+
+    function createFolderCard(folder, isBack = false) {
+      const div = document.createElement('article');
+      div.className = 'file-card folder';
+      div.dataset.category = 'folder'; // Fix for filtering
+
+      let buttonsHtml = '';
+      if (!isBack) {
+        buttonsHtml = `
+            <div class="file-actions">
+                <button class="file-action-btn" title="Переименовать" onclick="event.stopPropagation(); handleRename('${folder.name}')">✏️</button>
+                <button class="file-action-btn" title="В избранное" onclick="event.stopPropagation(); toggleFavorite(event, '${folder.name}')">⭐</button>
+                <button class="file-action-btn" title="Скачать" onclick="event.stopPropagation(); downloadFolder('${folder.name}')">⬇</button>
+                <button class="file-action-btn" title="Ссылка" onclick="event.stopPropagation(); viewLink('${folder.name}', true)">🔗</button>
+                <button class="file-action-btn" title="Удалить" onclick="event.stopPropagation(); deleteFile('${folder.name}')" style="color:var(--danger)">🗑</button>
+            </div>`;
+      }
+
+      div.innerHTML = `
+            <div class="file-icon" style="background: linear-gradient(135deg, #FFD54F 0%, #FFCA28 100%);">📁</div>
+            <div class="file-meta">
+                <h3>${isBack ? 'Назад' : folder.name}</h3>
+                <span>${isBack ? 'На уровень выше' : 'Папка'}</span>
+            </div>
+            ${buttonsHtml}
+        `;
+      div.onclick = (e) => {
+        // Handle selection if not clicking actions
+        if (!e.target.closest('.file-action-btn')) {
+          if (isBack) {
+            const parts = currentPath.split('/');
+            parts.pop();
+            currentPath = parts.join('/');
+            hydrateUserCloud();
+          } else {
+            handleFileSelect(div, folder);
+          }
+        }
+      };
+
+      // Double click to navigate
+      div.ondblclick = () => {
+        if (!isBack) {
+          currentPath = currentPath ? `${currentPath}/${folder.name}` : folder.name;
+          hydrateUserCloud();
+        }
+      };
+
+      return div;
+    }
+
+    function createFileCard(file) {
+      const div = document.createElement('article');
+      div.className = 'file-card';
+      div.dataset.category = getCategory(file.name);
+      div.innerHTML = `
+            <div class="file-icon" style="background: ${getGradient(file.name)}">${getIcon(file.name)}</div>
+            <div class="file-meta">
+                <h3 title="${file.name}">${file.name}</h3>
+                <span>${formatSize(file.size)}</span>
+            </div>
+            <div class="file-actions">
+                <button class="file-action-btn" title="Переименовать" onclick="event.stopPropagation(); handleRename('${file.name}')">✏️</button>
+                <button class="file-action-btn" title="В избранное" onclick="event.stopPropagation(); toggleFavorite(event, '${file.name}')">⭐</button>
+                <button class="file-action-btn" title="Скачать" onclick="event.stopPropagation(); downloadFile('${file.name}')">⬇</button>
+                <button class="file-action-btn" title="Ссылка" onclick="event.stopPropagation(); viewLink('${file.name}')">🔗</button>
+                <button class="file-action-btn" title="Удалить" onclick="event.stopPropagation(); deleteFile('${file.name}')" style="color:var(--danger)">🗑</button>
+            </div>
+        `;
+
+      // Click to select
+      div.onclick = (e) => {
+        // Prevent if clicking actions (already handled by stopPropagation, but extra safety)
+        if (!e.target.closest('.file-action-btn')) {
+          handleFileSelect(div, file);
+        }
+      };
+
+      // Double click to view
+      div.ondblclick = () => viewFile(file.name);
+      return div;
+    }
+
+    // PROPERTY PANEL LOGIC
+    function handleFileSelect(cardElement, fileData) {
+      // Deselect all
+      document.querySelectorAll('.file-card').forEach(c => c.classList.remove('selected'));
+      // Select current
+      cardElement.classList.add('selected');
+
+      const panel = document.getElementById('filePropertiesPanel');
+      if (panel) {
+        panel.style.display = 'block';
+        document.getElementById('propName').textContent = fileData.name;
+        document.getElementById('propType').textContent = fileData.isDirectory ? "Папка с файлами" : getCategory(fileData.name).toUpperCase();
+        document.getElementById('propSize').textContent = formatSize(fileData.size);
+        document.getElementById('propDate').textContent = new Date(fileData.mtime).toLocaleString();
+
+        const dlBtn = document.getElementById('propDownloadBtn');
+        if (dlBtn) {
+          dlBtn.onclick = () => {
+            if (fileData.isDirectory) downloadFolder(fileData.name);
+            else downloadFile(fileData.name);
+          };
+        }
+
+        const openBtn = document.getElementById('propOpenBtn');
+        if (openBtn) {
+          openBtn.onclick = () => {
+            if (fileData.isDirectory) {
+              // Navigate
+              currentPath = currentPath ? `${currentPath}/${fileData.name}` : fileData.name;
+              hydrateUserCloud();
+            } else {
+              viewFile(fileData.name);
+            }
+          }
+        }
+
+        const linkBtn = document.getElementById('propLinkBtn');
+        if (linkBtn) {
+          linkBtn.onclick = () => viewLink(fileData.name, fileData.isDirectory);
+        }
+
+        const shareBtn = document.getElementById('propShareBtn');
+        if (shareBtn) {
+          shareBtn.onclick = () => shareFile(fileData.name, fileData.isDirectory);
+        }
+      }
+    }
+
+    // Shared Link/Share Logic
+    function getDownloadUrl(filename, isDir) {
+      const path = currentPath ? `${currentPath}/${filename}` : filename;
+      const endpoint = isDir ? 'download-all' : 'file';
+      const token = getAuthToken();
+      return `${defaultServerRoot}/api/${endpoint}?path=${encodeURIComponent(path)}&token=${token}`;
+    }
+
+    // Link Modal Logic
+    const linkModal = document.getElementById('linkModal');
+    const linkInput = document.getElementById('linkModalInput');
+    const linkCopyBtn = document.getElementById('linkModalCopyBtn');
+
+    if (document.getElementById('linkModalClose')) {
+      document.getElementById('linkModalClose').addEventListener('click', () => {
+        if (linkModal) linkModal.classList.remove('active');
+      });
+    }
+
+    if (linkCopyBtn) {
+      linkCopyBtn.addEventListener('click', () => {
+        if (!linkInput) return;
+        linkInput.select();
+        linkInput.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+          const originalText = linkCopyBtn.textContent;
+          linkCopyBtn.textContent = "✅";
+          setTimeout(() => linkCopyBtn.textContent = originalText, 2000);
+        });
+      });
+    }
+
+    window.openLinkModal = function (url) {
+      if (linkInput) linkInput.value = url;
+      if (linkModal) linkModal.classList.add('active');
+    };
+
+    window.viewLink = function (filename, isDir = false) {
+      const url = getDownloadUrl(filename, isDir);
+      openLinkModal(url);
+    };
+
+    window.shareFile = async function (filename, isDir = false) {
+      const url = getDownloadUrl(filename, isDir);
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: filename,
+            text: 'Файл из GlassDrive',
+            url: url
+          });
+        } catch (err) {
+          console.log('Error sharing:', err);
+        }
+      } else {
+        openLinkModal(url);
+      }
+    };
+
+
+    // Missing Action Functions
+    window.handleRename = async function (oldName) {
+      const newName = prompt("Введите новое имя:", oldName);
+      if (!newName || newName === oldName) return;
+
+      try {
+        const resp = await authFetch(`${defaultServerRoot}/api/rename`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path: currentPath,
+            oldName: oldName,
+            newName: newName
+          })
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          hydrateUserCloud();
+        } else {
+          alert(data.error || "Ошибка переименования");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Ошибка переименования");
+      }
+    };
+
+    window.downloadFolder = function (folderName) {
+      if (!currentUser) return alert("Сначала войдите в систему");
+      const path = currentPath ? `${currentPath}/${folderName}` : folderName;
+      const url = `${defaultServerRoot}/api/download-all?path=${encodeURIComponent(path)}`;
+      window.open(url, '_blank');
+    };
+
+    /* Utilities */
+    function getCategory(name) {
+      const ext = name.split('.').pop().toLowerCase();
+      if (['jpg', 'png', 'jpeg', 'gif'].includes(ext)) return 'photo';
+      if (['mp4', 'mov'].includes(ext)) return 'video';
+      return 'docs';
+    }
+    function getIcon(name) {
+      const c = getCategory(name);
+      if (c === 'photo') return '📸';
+      if (c === 'video') return '🎬';
+      return '📄';
+    }
+    function getGradient(name) {
+      const c = getCategory(name);
+      if (c === 'photo') return gradientMap.photo;
+      if (c === 'video') return gradientMap.video;
+      return gradientMap.docs;
+    }
+
+    /* Actions */
+    window.handleCreateFolder = async function () {
+      if (!currentUser) return alert("Сначала войдите в систему");
+      const name = prompt("Название папки:");
+      if (!name) return;
+      const path = currentPath ? `${currentPath}/${name}` : name;
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/folders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path })
+        });
+        if (res.ok) hydrateUserCloud();
+        else alert("Ошибка");
+      } catch (e) { console.error(e); }
+    };
+
+    window.handleDownloadAll = function () {
+      if (!currentUser) return alert("Сначала войдите в систему");
+      // We use window.open but it won't send auth headers automatically if cookies are Strict and domain differs.
+      // But here domain is same (localhost).
+      const url = `${defaultServerRoot}/api/download-all?path=${encodeURIComponent(currentPath)}`;
+      window.open(url, '_blank');
+    };
+
+    window.downloadFile = function (filename) {
+      if (!currentUser) return alert("Сначала войдите в систему");
+      const path = currentPath ? `${currentPath}/${filename}` : filename;
+      const url = `${defaultServerRoot}/api/file?path=${encodeURIComponent(path)}`;
+      // Trigger download
+      // Create invisible iframe or link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+
+    window.deleteFile = async function (filename) {
+      if (!confirm(`Удалить ${filename}?`)) return;
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/files`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, path: currentPath })
+        });
+        if (res.ok) hydrateUserCloud();
+        else alert("Ошибка");
+      } catch (e) { console.error(e); }
+    };
+
+    window.viewFile = async function (filename) {
+      const path = currentPath ? `${currentPath}/${filename}` : filename;
+      const ext = filename.split('.').pop().toLowerCase();
+      const token = getAuthToken();
+
+      // Video
+      if (['mp4', 'mov', 'webm'].includes(ext)) {
+        const directUrl = `${defaultServerRoot}/api/file?path=${encodeURIComponent(path)}`;
+        openPhotoViewer(directUrl, 'video', filename);
+        return;
+      }
+
+      // PDF
+      if (['pdf'].includes(ext)) {
+        window.open(`${defaultServerRoot}/api/file?path=${encodeURIComponent(path)}&token=${token}`, '_blank');
+        return;
+      }
+
+      if (['jpg', 'png', 'gif', 'jpeg', 'zip', 'txt', 'md', 'json', 'js', 'html', 'css', '7z', 'rar', 'tar', 'gz'].includes(ext)) {
+        try {
+          // For images, we need a URL that works in <img> src.
+          // We use the new token query param support in server.js
+          if (['jpg', 'png', 'gif', 'jpeg'].includes(ext)) {
+            const directUrl = `${defaultServerRoot}/api/file?path=${encodeURIComponent(path)}`;
+            openPhotoViewer(directUrl, 'image', filename);
+            return;
+          }
+
+          // For Archives
+          if (['zip', '7z', 'rar', 'tar', 'gz'].includes(ext)) {
+            openPhotoViewer(path, 'archive', filename);
+            return;
+          }
+
+          // For Text
+          const res = await authFetch(`${defaultServerRoot}/api/file?path=${encodeURIComponent(path)}`);
+          if (res.ok) {
+            const text = await res.text();
+            const viewer = document.getElementById('photoViewer');
+            const tView = document.getElementById('viewerText');
+            const img = document.getElementById('viewerImage');
+            if (viewer && tView) {
+              if (img) img.style.display = 'none';
+              tView.textContent = text;
+              tView.style.display = 'block';
+              viewer.classList.add('active');
+            }
+          } else {
+            alert('Не удалось открыть файл (Ошибка сервера)');
+          }
+        } catch (e) { console.error(e); }
+      } else {
+        alert("Нет предпросмотра для этого типа");
+      }
+    };
+
+    // Favorites Logic
+    // Navigation Logic
+    window.navigateToRoot = function () {
+      if (!currentUser) return;
+
+      // Exit Admin Mode logic
+      if (targetUser) {
+        targetUser = null;
+        const btn = document.getElementById('adminExitBtn');
+        if (btn) btn.remove();
+      }
+
+      currentPath = ""; // Root
+      setActiveView('files'); // Ensure correct view section is active
+      hydrateUserCloud();
+      updateStatusPill(viewStatus, "success", "Мои файлы");
+
+      // Update active nav
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('navDrive')?.classList.add('active');
+    };
+
+    window.loadFavoritesView = function () {
+      if (!currentUser) return;
+
+      // Exit Admin Mode logic
+      if (targetUser) {
+        targetUser = null;
+        const btn = document.getElementById('adminExitBtn');
+        if (btn) btn.remove();
+      }
+
+      loadFavorites();
+
+      // Update active nav
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('navFavorites')?.classList.add('active');
+    };
+
+    /* ADMIN LOGIC */
+    window.loadUsersView = async function () {
+      if (!currentUser || currentUser.email !== 'admin@glassdrive.com') return;
+
+      // Exit Admin Mode logic
+      if (targetUser) {
+        targetUser = null;
+        const btn = document.getElementById('adminExitBtn');
+        if (btn) btn.remove();
+      }
+
+      setActiveView('users');
+      updateStatusPill(viewStatus, "loading", "Загрузка пользователей...");
+
+      // Update nav
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('navUsers')?.classList.add('active');
+
+      // Hide filters
+      const filters = document.getElementById('fileFilters');
+      if (filters) filters.style.display = 'none';
+
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/admin/users`);
+        if (res.ok) {
+          const users = await res.json();
+          const grid = document.getElementById('usersGrid');
+          grid.innerHTML = '';
+          users.forEach(user => {
+            grid.appendChild(createUserCard(user));
+          });
+          updateStatusPill(viewStatus, "success", "Пользователи");
+        } else {
+          updateStatusPill(viewStatus, "error", "Ошибка загрузки");
+        }
+      } catch (e) {
+        console.error(e);
+        updateStatusPill(viewStatus, "error", "Ошибка сети");
+      }
+    };
+
+    function createUserCard(user) {
+      const div = document.createElement('article');
+      div.className = 'file-card folder'; // Reuse folder style structure
+      div.innerHTML = `
+            <div class="file-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">👤</div>
+            <div class="file-meta">
+                <h3>${user.name}</h3>
+                <span>${user.email}</span>
+            </div>
+            <div class="file-actions">
+                 <button class="file-action-btn" title="Войти как пользователь" onclick="impersonateUser('${user.email}')" style="width: auto; padding: 0 10px; font-size: 12px; margin-right: 4px;">Войти</button>
+                 <button class="file-action-btn" title="Удалить пользователя" onclick="deleteUser('${user.email}')" style="width: auto; padding: 0 10px; font-size: 12px; background: rgba(255, 105, 120, 0.2); border: 1px solid rgba(255, 105, 120, 0.4); color: #ff6978;">Удалить</button>
+            </div>
+        `;
+      return div;
+    }
+
+    window.deleteUser = async function (email) {
+      if (!confirm(`Вы уверены, что хотите удалить пользователя ${email}? Все данные будут потеряны навсегда.`)) return;
+
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/admin/user`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        if (res.ok) {
+          alert("Пользователь удален");
+          loadUsersView(); // Reload list
+        } else {
+          const err = await res.json();
+          alert(err.error || "Ошибка удаления");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Ошибка сети");
+      }
+    };
+
+    window.impersonateUser = function (email) {
+      targetUser = email;
+      currentPath = ""; // Reset path
+      hydrateUserCloud(); // Reload files as target user
+      setActiveView('files');
+
+      // Show banner
+      updateStatusPill(viewStatus, "warning", `Режим админа: ${email}`);
+
+      // Add exit button if not exists
+      let exitBtn = document.getElementById('adminExitBtn');
+      if (!exitBtn) {
+        const header = document.querySelector('.section-header');
+        exitBtn = document.createElement('button');
+        exitBtn.id = 'adminExitBtn';
+        exitBtn.textContent = "Выйти из аккаунта";
+        exitBtn.style.cssText = "margin-left: 10px; background: rgba(255, 105, 120, 0.2); border: 1px solid rgba(255, 105, 120, 0.4); color: #ff6978; padding: 4px 12px; border-radius: 8px; cursor: pointer;";
+        exitBtn.onclick = () => {
+          targetUser = null;
+          loadUsersView(); // Reloads user list, updates nav, hides filters, sets pill
+          exitBtn.remove();
+        };
+        header.appendChild(exitBtn);
+      }
+    };
+
+    // Favorites Logic
+    window.toggleFavorite = async function (e, filename) {
+      e.stopPropagation();
+      if (!currentUser) return;
+      const path = currentPath ? `${currentPath}/${filename}` : filename;
+
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/favorites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path })
+        });
+        if (res.ok) {
+          // Ideally refresh or toggle icon
+          alert("Избранное обновлено");
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    window.loadFavorites = async function () {
+      if (!currentUser) return;
+      updateStatusPill(viewStatus, "loading", "Загрузка избранного...");
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/favorites`);
+        if (res.ok) {
+          const files = await res.json();
+          renderServerFiles({ files: files }); // Re-use render
+          updateStatusPill(viewStatus, "success", "Избранное");
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    // Bind Favorites Button
+    const favBtn = document.querySelector('nav li[onclick*="Favorites"]');
+    if (favBtn) {
+      favBtn.onclick = () => loadFavorites();
+    } else {
+      // Just in case user clicks the sidebar item "Favorites" or "Избранное"
+      // We can iterate nav items or assume user clicks specific ID if exists.
+      // Let's look for text content logic or add it if needed.
+    }
+
+    /* Fix Photo Viewer for Archive to use Auth */
+    async function openPhotoViewer(url, type, name) {
+      const viewer = document.getElementById('photoViewer');
+      const img = document.getElementById('viewerImage');
+      const vid = document.getElementById('viewerVideo');
+      const tView = document.getElementById('viewerText');
+      const titleEl = document.getElementById('viewerTitle');
+
+      // Reset
+      [img, vid, tView].forEach(el => { if (el) el.style.display = 'none'; });
+      if (titleEl) titleEl.textContent = name || 'Просмотр';
+
+      const token = getAuthToken();
+
+      if (type === 'image') {
+        img.src = `${url}&token=${token}`;
+        img.alt = name || 'Просмотр';
+        img.style.display = 'block';
+      } else if (type === 'video') {
+        vid.src = `${url}&token=${token}`;
+        vid.style.display = 'block';
+        vid.play().catch(e => console.log("Autoplay blocked", e));
+      } else if (type === 'archive') {
+        tView.style.display = 'block';
+        tView.textContent = "Загрузка...";
+        try {
+          const res = await authFetch(`${defaultServerRoot}/api/archive/inspect?filename=${encodeURIComponent(url)}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.entries) {
+              tView.textContent = json.entries.map(e => `${e.size} ${e.date} ${e.name}`).join('\n');
+            } else {
+              tView.textContent = "Пусто или ошибка";
+            }
+          } else {
+            tView.textContent = "Ошибка проверки архива";
+          }
+        } catch (e) { tView.textContent = "Ошибка сети"; }
+      }
+      if (viewer) viewer.classList.add('active');
+    }
+
+    // Close Viewer Logic
+    window.closePhotoViewer = function () {
+      const viewer = document.getElementById('photoViewer');
+      const img = document.getElementById('viewerImage');
+      const vid = document.getElementById('viewerVideo');
+      if (viewer) viewer.classList.remove('active');
+      if (img) img.src = ""; // Clear src
+      if (vid) { vid.pause(); vid.src = ""; }
+    };
+
+    const closeViewerBtn = document.getElementById('closeViewer');
+    if (closeViewerBtn) {
+      closeViewerBtn.addEventListener('click', window.closePhotoViewer);
+    }
+    // Also Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') window.closePhotoViewer();
+    });
+
+    // Modal Logic
+    const modal = document.getElementById('authModal');
+    const closeBtn = document.getElementById('modalClose');
+    const overlay = document.querySelector('.modal-overlay');
+    function closeModal() { if (modal) modal.classList.remove('active'); }
+    function openModal() { if (modal) modal.classList.add('active'); }
+
+    if (document.getElementById('authTrigger')) document.getElementById('authTrigger').addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (overlay) overlay.addEventListener('click', closeModal);
+
+    const tabs = document.querySelectorAll('.modal-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
+        document.getElementById(`${tab.dataset.tab}Form`).classList.remove('hidden');
+      });
+    });
+
+
+    /* Chat Logic */
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendMessageBtn');
+    const chatMessages = document.getElementById('chatMessages');
+
+    function addMessage(text, type) {
+      if (!chatMessages) return;
+      const div = document.createElement('div');
+      div.className = `chat-message ${type}`;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function handleChat() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      addMessage(text, 'user');
+      chatInput.value = '';
+
+      try {
+        const res = await authFetch(`${defaultServerRoot}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          addMessage(data.reply, 'bot');
+        } else {
+          const err = await res.json().catch(() => ({}));
+          addMessage(err.error || "Ошибка сервера", 'bot');
+        }
+      } catch (e) {
+        console.error(e);
+        addMessage("Ошибка сети", 'bot');
+      }
+    }
+
+    if (sendBtn) sendBtn.addEventListener('click', handleChat);
+    if (chatInput) chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleChat();
+    });
+
+    // Mobile Sidebar Logic
+    const mobileBtn = document.getElementById('mobileMenuBtn');
+    const sidebar = document.querySelector('aside.sidebar');
+    const sbOverlay = document.getElementById('sidebarOverlay');
+
+    if (mobileBtn && sidebar && sbOverlay) {
+      function toggleSidebar() {
+        sidebar.classList.toggle('active');
+        sbOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+
+      mobileBtn.addEventListener('click', toggleSidebar);
+      sbOverlay.addEventListener('click', toggleSidebar);
+
+      // Close sidebar on item click (optional)
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          if (window.innerWidth <= 768) toggleSidebar();
+        });
+      });
+    }
+
+    // Init
+    checkAuth();
+
+
+  </script>
+  <style>
+    .photo-viewer {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .photo-viewer.active {
+      display: flex;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .photo-viewer img,
+    .photo-viewer video {
+      max-width: 90vw;
+      max-height: 85vh;
+      width: auto;
+      height: auto;
+      display: block;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+    }
+
+    .photo-viewer #viewerTitle {
+      position: absolute;
+      top: 32px;
+      left: 32px;
+      color: white;
+      margin: 0;
+      font-family: 'Sora', sans-serif;
+      font-size: 24px;
+      font-weight: 600;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+
+    .close-viewer {
+      position: absolute;
+      top: 32px;
+      right: 32px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      font-size: 24px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      line-height: 1;
+      padding: 0;
+      z-index: 1010;
+    }
+
+    .close-viewer:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+    }
+
+    .photo-viewer pre {
+      background: rgba(30, 32, 44, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #e2e8f0;
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      max-width: 80%;
+      max-height: 80vh;
+      overflow: auto;
+      font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* Custom Scrollbar for the text viewer */
+    .photo-viewer pre::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    .photo-viewer pre::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .photo-viewer pre::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+    }
+
+    .photo-viewer pre::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* CHAT STYLES */
+    .assistant-bubble {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 300px;
+      max-height: 500px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+      min-height: 100px;
+      font-size: 13px;
+    }
+
+    .chat-message {
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 90%;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+
+    .chat-message.bot {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-message.user {
+      background: rgba(69, 255, 230, 0.2);
+      color: var(--text-primary);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-input-area {
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(7, 12, 30, 0.4);
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+
+    .chat-input-area button {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(69, 255, 230, 0.7);
+      color: #0b1121;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .chat-input-area button:hover {
+      background: rgba(69, 255, 230, 0.9);
+    }
+
+    .assistant-actions {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .assistant-actions button {
+      flex: 0 0 auto;
+      font-size: 11px;
+      padding: 6px 10px;
+    }
+
+    /* MOBILE RESPONSIVE STYLES */
+    /* MOBILE RESPONSIVE STYLES */
+    @media (max-width: 768px) {
+
+      body::before,
+      body::after {
+        opacity: 0.2;
+      }
+
+      .app-shell {
+        grid-template-columns: 1fr;
+        padding: 12px;
+        gap: 16px;
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        /* CRITICAL: Remove z-index to allow fixed children to escape if browser supports, 
+           or at least reset context. But fixed position should escape relative parent unless transform used.
+           If we really want to be safe, we rely on high z-index and removed constraint. */
+        z-index: auto;
+        position: static;
+        /* Removing relative might help mobile browsers pop fixed out */
+      }
+
+      header.topbar {
+        padding: 12px 16px 8px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 12px;
+        z-index: 101;
+        position: relative;
+      }
+
+      .logo {
+        margin-right: auto;
+        /* Push search to right */
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+      }
+
+      /* Toggle Button for Sidebar */
+      #mobileMenuBtn {
+        display: block !important;
+        font-size: 24px;
+        z-index: 3000;
+        padding: 8px;
+        color: var(--text-primary);
+        background: none;
+        border: none;
+        position: relative;
+        left: auto;
+        top: auto;
+        margin: 0;
+        margin-right: 4px;
+        align-self: auto;
+      }
+
+      /* User Chip & Auth - Full Width on Mobile */
+      .user-chip,
+      .auth-btn {
+        width: 100%;
+        order: 3;
+        margin-top: 4px;
+        justify-content: space-between;
+        /* Spread content in chip */
+      }
+
+      /* Ensure User Chip looks like the screenshot (card style) */
+      .user-chip {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        /* Keep big radius */
+        padding: 12px 16px;
+      }
+
+      /* Search Box - Full Width Bottom */
+      .search-box {
+        order: 4;
+        width: 100%;
+        margin-top: 2px;
+        max-width: none;
+        position: relative;
+        z-index: 1;
+        flex: 0 0 100%;
+      }
+
+      .search-box input {
+        padding: 12px 16px 12px 42px;
+        /* Restore comfortable padding */
+        font-size: 14px;
+        height: auto;
+        border-radius: 18px;
+        /* Ensure 18px or similar radius is kept */
+      }
+
+      .search-icon {
+        left: 14px;
+        font-size: 20px;
+      }
+
+      .mic-icon {
+        display: block;
+      }
+
+      /* Hide mic on mobile if space tight */
+
+      /* Toggle Button for Sidebar */
+      #mobileMenuBtn {
+        display: block !important;
+        font-size: 24px;
+        margin-right: 12px;
+        z-index: 3000;
+        /* Highest priority to be clickable */
+        padding: 8px;
+        color: var(--text-primary);
+        background: none;
+        border: none;
+        position: relative;
+      }
+
+      /* Sidebar proper */
+      aside.sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 85%;
+        max-width: 300px;
+        background: #0b1026;
+        z-index: 2002;
+        /* Hardware accelerated transition */
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+        transform: translateX(-105%);
+        /* Move completely off-screen */
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        padding-top: 60px;
+        visibility: hidden;
+        /* Hide when closed to prevent focusing */
+        overflow-y: auto;
+        will-change: transform;
+        /* Hint to browser */
+      }
+
+      aside.sidebar.active {
+        transform: translateX(0);
+        visibility: visible;
+      }
+
+      /* Entry Animation for Grid Items */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .file-card {
+        animation: fadeInUp 0.4s ease-out backwards;
+      }
+
+      /* Stagger delays for the first few items if possible,
+         but simple css :nth-child works best for static count.
+         For dynamic, JS is better, but let's do a few manually for the feel. */
+      .file-card:nth-child(1) {
+        animation-delay: 0.05s;
+      }
+
+      .file-card:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+
+      .file-card:nth-child(3) {
+        animation-delay: 0.15s;
+      }
+
+      .file-card:nth-child(4) {
+        animation-delay: 0.2s;
+      }
+
+      .file-card:nth-child(5) {
+        animation-delay: 0.25s;
+      }
+
+      .file-card:nth-child(n+6) {
+        animation-delay: 0.3s;
+      }
+
+
+
+      /* Fix Sidebar Elements */
+      .sidebar .user-chip {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+        width: 100%;
+      }
+
+      .sidebar .user-chip-actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+        margin-top: 4px;
+      }
+
+      .sidebar .nav-btn {
+        width: 100%;
+        margin-bottom: 8px;
+        justify-content: center;
+      }
+
+      /* Fix File Actions on Mobile */
+      .file-actions {
+        flex-wrap: wrap;
+        /* Allow wrapping */
+        gap: 6px;
+        /* Smaller gap */
+      }
+
+      .file-action-btn {
+        width: 28px;
+        /* Slightly smaller */
+        height: 28px;
+        font-size: 14px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .upload-card {
+        padding: 16px;
+        margin-top: 20px;
+      }
+
+      .upload-card p {
+        font-size: 11px;
+      }
+
+      .ai-panel {
+        display: none;
+      }
+
+      .file-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+      }
+
+      #sidebarOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        /* backdrop-filter: blur(4px); REMOVED to prevent visual glitching if stacked wrong */
+        z-index: 2001;
+        /* Between content and sidebar */
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      #sidebarOverlay.active {
+        display: block;
+        opacity: 1;
+      }
+
+      .modal-content {
+        width: 92vw;
+        padding: 20px;
+      }
+    }
+  </style>
+  <!-- PHOTO VIEWER MODAL -->
+  <div id="photoViewer" class="photo-viewer" onclick="if(event.target === this) closePhotoViewer()">
+    <button class="close-viewer" onclick="closePhotoViewer()">×</button>
+    <h3 id="viewerTitle"
+      style="position: absolute; top: 20px; left: 30px; color: white; margin: 0; font-family: 'Sora', sans-serif;"></h3>
+    <img id="viewerImage" src="" alt="Просмотр" style="display:none;">
+    <video id="viewerVideo" controls style="display:none;"></video>
+    <audio id="viewerAudio" controls style="display:none; margin-top: 20px; width: 80%;"></audio>
+    <pre id="viewerText" style="display:none;"></pre>
+  </div>
+
+</body>
+
+</html>
