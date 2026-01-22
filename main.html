@@ -1947,11 +1947,7 @@
     /* СЕРВЕРНАЯ ЛОГИКА (SECURE) */
 
     // Dynamic Server Root configuration for APK/Mobile compatibility
-<<<<<<< HEAD
     let defaultServerRoot = localStorage.getItem('customServerUrl') || "https://glassdrive.onrender.com/";
-=======
-    let defaultServerRoot = localStorage.getItem('customServerUrl') || "https://glassdrive.onrender.com/";
->>>>>>> 5cc9ef98cfd69f9f2acf6d185d48f9e8366bf121
 
     // Global function to update server URL (can be called from console or UI)
     window.setServerUrl = function (url) {
@@ -2223,11 +2219,7 @@
         if (infoP) infoP.textContent = `${currentUser.email}`;
 
         // Pre-fill server URL
-<<<<<<< HEAD
         const currentUrl = localStorage.getItem('customServerUrl') || "https://glassdrive.onrender.com/";
-=======
-        const currentUrl = localStorage.getItem('customServerUrl') || "https://glassdrive.onrender.com/";
->>>>>>> 5cc9ef98cfd69f9f2acf6d185d48f9e8366bf121
         const sInput = document.getElementById("serverUrlInput");
         const sDisplay = document.getElementById("currentServerDisplay");
         if (sInput) sInput.value = currentUrl;
