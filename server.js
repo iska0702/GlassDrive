@@ -793,6 +793,14 @@ app.post('/api/chat', authenticateToken, async (req, res) => {
     return res.json({ reply: "Я думаю... но шаги закончились." });
 });
 
+app.get('/api/check-auth', (req, res) => {
+    // если пока нет авторизации
+    res.json({
+        authenticated: false
+    });
+});
+
+
 // Start Server
 app.listen(PORT, () => {
     console.log(`Secure Server running on port ${PORT}`);
