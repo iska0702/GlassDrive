@@ -800,13 +800,13 @@ app.get('/api/check-auth', (req, res) => {
     });
 });
 
-app.get('/api/debug-token', (req, res) => {
-    const token = generateToken({
-        email: 'debug@test.com',
-        name: 'Debug'
-    });
-    res.json({ token });
+res.cookie('auth_token', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none'
 });
+res.json({ success: true });
+
 
 // Start Server
 app.listen(PORT, () => {
